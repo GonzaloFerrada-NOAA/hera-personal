@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# echo ${@}
+cp -a -v -r ${@} /scratch1/data_untrusted/Gonzalo.Ferrada
+

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+current_node=$(hostname | cut -d'.' -f1)
+nodes=$(seq -f "hfe%02g" 1 11)
+
+
+echo "
+Current node is: $current_node                  
+"
+
+
+for node in $nodes; do
+	
+		
+	echo "$node"
+	
+	ssh "$node" "
+	tmux list-sessions
+	"
+	echo "---------------------------------------------------------------"
+	
+done
+
+exit 0

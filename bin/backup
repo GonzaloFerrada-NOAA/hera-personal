@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# Usage:
+#   backup_small_files.sh [-big] [-maxsize SIZE] [--exclude EXT1,EXT2,...]
+
+set -euo pipefail
+
+# Configuration
+DST_DIR="/scratch1/BMC/gsd-fv3-dev/Gonzalo.Ferrada/.BACKUP"
+INCLUDE_BIG=false
+MAX_SIZE="10M" # Default maximum size
+EXCLUDE_EXTENSIONS=()
+
+# Functions
+print_usage() {
+    echo "Usage: $0 [-big] [-maxsize SIZE] [--exclude EXT1,EXT2,...]"
+    echo ""
+    echo "Options:"
+    echo "  -big               Include files of any size (disables size filter)"
+    echo "  -maxsize SIZE      Maximum size to include (e.g., 5M, 500K, 2G). Default is 10M."
+    echo "  --exclude EXT,...  Exclude files with specified extensions (comma-separated, no dots)."
+    echo ""
+    echo "Example:"
+    echo "  $0 -maxsize 2M --exclude nc,log"
+    exit 1
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -big)
+            INCLUDE_BIG=true
+            shift
+            ;;
+        --maxsize)
+            if [[ $# -lt 2 ]]; then
+                echo "Error: -maxsize requires a size argument (e.g., 5M)."
+                exit 1
+            fi
+            MAX_SIZE="$2"
+            shift 2
+            ;;
+        --exclude)
+            if [[ $# -lt 2 ]]; then
+                echo "Error: --exclude requires an extension list."
+                exit 1
+            fi
+            IFS=',' read -r -a EXCLUDE_EXTENSIONS <<< "$2"
+            shift 2
+            ;;
+        -h|--help)
+            print_usage
+            ;;
+        *)
+            echo "Unknown option: $1"
+            print_usage
+            ;;
+    esac
+done
+
+# Set source directory
+SRC_DIR=$(pwd)
+DIRNAME=$(basename "$SRC_DIR")
+DATE_STR=$(date +%Y%m%d-%H%M)
+BACKUP_NAME="${DIRNAME}_${DATE_STR}.tar.gz"
+TMP_FILELIST=$(mktemp)
+
+# Ensure destination exists
+mkdir -p "$DST_DIR"
+
+# Build the find command
+FIND_CMD=(find . -type f)
+
+if [ "$INCLUDE_BIG" = false ]; then
+    # Convert MAX_SIZE to bytes
+    if [[ "$MAX_SIZE" =~ ^([0-9]+)([KMG])$ ]]; then
+        NUM=${BASH_REMATCH[1]}
+        UNIT=${BASH_REMATCH[2]}
+        case "$UNIT" in
+            K) BYTES=$((NUM * 1024));;
+            M) BYTES=$((NUM * 1024 * 1024));;
+            G) BYTES=$((NUM * 1024 * 1024 * 1024));;
+        esac
+    else
+        echo "Invalid -maxsize format: must be like 5M, 200K, 1G"
+        exit 1
+    fi
+    FIND_CMD+=(-size -"${BYTES}c")
+fi
+
+# Exclude extensions if specified
+for ext in "${EXCLUDE_EXTENSIONS[@]}"; do
+    FIND_CMD+=(! -name "*.${ext}")
+done
+
+# Generate list of files (relative paths)
+"${FIND_CMD[@]}" > "$TMP_FILELIST"
+
+# Create compressed tar.gz archive
+tar -czf "${DST_DIR}/${BACKUP_NAME}" -T "$TMP_FILELIST"
+
+# Remove write permissions
+chmod a-w "${DST_DIR}/${BACKUP_NAME}"
+
+# Clean up
+rm -f "$TMP_FILELIST"
+
+echo "Backup created and made read-only: ${DST_DIR}/${BACKUP_NAME}"

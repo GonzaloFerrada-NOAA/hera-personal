@@ -1,0 +1,12 @@
+#!/bin/bash
+
+CURRENTDIR=$(basename "$PWD")
+
+CYCLE="${1}"
+TASK="${2}"
+
+
+echo $(date)
+echo "rocotostat -d ${CURRENTDIR}.db -w ${CURRENTDIR}.xml -c ${CYCLE} -t ${TASK}"
+rocotorewind -d ${CURRENTDIR}.db -w ${CURRENTDIR}.xml -c ${CYCLE} -t ${TASK}
+

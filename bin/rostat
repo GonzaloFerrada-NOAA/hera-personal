@@ -1,0 +1,8 @@
+#!/bin/bash
+
+CURRENTDIR=$(basename "$PWD")
+
+echo $(date)
+echo "rocotostat -d ${CURRENTDIR}.db -w ${CURRENTDIR}.xml"
+rocotostat -d ${CURRENTDIR}.db -w ${CURRENTDIR}.xml
+

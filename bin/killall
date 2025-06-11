@@ -1,0 +1,44 @@
+#!/bin/bash
+
+current_node=$(hostname | cut -d'.' -f1)
+nodes=$(seq -f "hfe%02g" 1 11)
+
+
+echo "
+			▗▖ ▗▖▗▄▄▄▖▗▖   ▗▖    ▗▄▖ ▗▖   ▗▖   
+			▐▌▗▞▘  █  ▐▌   ▐▌   ▐▌ ▐▌▐▌   ▐▌   
+			▐▛▚▖   █  ▐▌   ▐▌   ▐▛▀▜▌▐▌   ▐▌   
+			▐▌ ▐▌▗▄█▄▖▐▙▄▄▖▐▙▄▄▖▐▌ ▐▌▐▙▄▄▖▐▙▄▄▖
+  
+Current node is: $current_node                  
+"
+
+for node in $nodes; do
+	
+	if [ "$node" != "$current_node" ]; then
+		
+		echo "Checking login node $node..."
+		
+		ssh "$node" "
+		PIDS=\$(ps aux | grep $USER | grep -v root | grep -v grep | awk '{print \$2}')
+		echo \"PIDS: \" \$PIDS
+		if [ -n \"\$PIDS\" ]; then 
+			echo \" Killing processes: \" \$PIDS ; 
+			kill -9 \$PIDS; 
+		fi
+		"
+		echo "---------------------------------------------------------------"
+	fi
+	
+done
+
+# Terminate current node:
+echo "Terminating current node $current_node..."
+PIDS=$(ps aux | grep $USER | grep -v root | grep -v grep | awk '{print $2}')
+echo "Killing processes: " ${PIDS}
+echo "---------------------------------------------------------------"
+
+kill -9 $PIDS
+kill -9 $PIDS
+
+exit 0

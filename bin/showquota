@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Run the saccount_params command and filter the directory information
+saccount_params | grep -E "Directory:" | awk '
+BEGIN {
+    # Print the table header
+    printf "%-40s %-10s %-10s %-5s\n", "Directory", "In use", "Quota", "%"
+    printf "%-40s %-10s %-10s %-5s\n", "----------------------------------------", "---------", "---------", "-----"
+}
+{
+    # Extract the directory path
+    dir = $2
+
+    # Extract DiskInUse and Quota values
+    match($0, /DiskInUse=([0-9]+) ([A-Z]+), Quota=([0-9]+) ([A-Z]+)/, arr)
+    disk_in_use = arr[1] " " arr[2]
+    quota = arr[3] " " arr[4]
+
+    # Convert the numeric parts for percentage calculation
+    disk_value = arr[1] + 0
+    quota_value = arr[3] + 0
+
+    # Calculate the usage percentage
+    if (quota_value > 0) {
+        percent = (disk_value / quota_value) * 100
+    } else {
+        percent = 0
+    }
+
+    # Print the formatted row
+    printf "%-40s %-10s %-10s %3d%%\n", dir, disk_in_use, quota, percent
+}'
+

@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+# Usage:
+#   submitmatlab matlab_code.m nproc jobname queue
+# Example:
+#   submitmatlab read_aod_cams.m 4 myjobname UI
+#
+# Author: Gonzalo A. Ferrada (gonzalo-ferrada@uiowa.edu)
+# July 2020
+
+codename=$1
+ntime=$2
+nproc=$3
+jobname=$4
+queue=$5
+
+# Defaults
+if [ -z "$codename" ]
+then
+    echo " "
+    # echo "                  E R R O R !   What MATLAB code are you trying to submit? "
+    echo "          Usage:  submitmatlab <matlab_code.m> <time-hours> <ntasks> <jobname> <queue> "
+    echo "        Example:  submitmatlab test_matlab.m 2 2 myjob gsd-fv3-dev"
+    echo " "
+    exit
+fi
+if [ -z "$ntime" ]
+then
+  # Hours:
+    ntime=2
+fi
+if [ -z "$nproc" ]
+then
+  # Number of tasks:
+    nproc=4
+fi
+if [ -z "$queue" ]
+then
+  # Account to charge:
+    queue='gsd-fv3-dev'
+fi
+if [ -z "$jobname" ]
+then
+  # Job name:
+    jobname=${codename:0:8}
+fi
+
+
+
+
+# Check if code contains ".m" extension
+if [ ${codename: -2} == ".m" ]
+then
+    codename=${codename%.m}
+fi
+
+# Create job file:
+/usr/bin/cat << EOF > matlab.tmp.job
+#!/bin/bash
+#SBATCH --job-name=${jobname}
+#SBATCH --ntasks=${nproc}
+#SBATCH --time=${ntime}:00:00
+#SBATCH --output=log.${jobname}
+#SBATCH --account=${queue}
+#SBATCH --partition=hera
+#SBATCH --qos=batch
+#SBATCH --mail-type=FAIL
+#SBATCH --mail-user=Gonzalo.Ferrada@noaa.gov
+
+module load matlab/R2023b
+command='matlab -nodisplay -nosplash -nodesktop -r "tic;${codename};toc;exit" '
+echo \$command
+eval \$command
+
+EOF
+
+# Submit job:
+echo /apps/slurm/default/bin/sbatch matlab.tmp.job
+/apps/slurm/default/bin/sbatch matlab.tmp.job
+
+# Delete job:
+#
+#
+
+exit 0

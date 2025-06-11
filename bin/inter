@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Default values
+account="test"
+ntasks=10
+walltime="4:00:00"
+qos="batch"
+
+# Iterate through arguments
+for arg in "$@"; do
+  
+    if [[ "$arg" == "test" || "$arg" == "dev" ]]; then
+        account="$arg"
+
+    elif [[ "$arg" =~ ^[1-9]$|^1[0-9]$|^20$ ]]; then
+        ntasks="$arg"
+
+    elif [[ "$arg" =~ ^[0-9]+m$ ]]; then
+        minutes="${arg%m}"
+        walltime="00:${minutes}:00"
+
+    elif [[ "$arg" =~ ^[0-9]+h$ ]]; then
+        hours="${arg%h}"
+        walltime="${hours}:00:00"
+
+    elif [[ "$arg" == *":"* ]]; then
+        walltime="$arg"
+
+    elif [[ "$arg" == "batch" || "$arg" == "debug" || "$arg" == "urgent" ]]; then
+        qos="$arg"
+
+    else
+        echo "Error: Unrecognized argument '$arg'" >&2
+        exit 1
+    fi
+    
+done
+
+# Adjust QoS based on walltime
+if [[ "$walltime" == "00:"* || "$walltime" == "00:30:00" ]]; then
+    qos="debug"
+fi
+
+# Print final values (or use them for your job submission)
+echo $(date)
+echo "inter: requesting interactive session as:"
+echo "Account         : gsd-fv3-${account}"
+echo "Number of Tasks : $ntasks"
+echo "Walltime        : $walltime"
+echo "QoS             : $qos"
+
+
+echo "salloc --partition=hera --account=gsd-fv3-${account} --ntasks=${ntasks} --time=${walltime} --qos=${qos}"
+
+salloc --partition=hera --account=gsd-fv3-${account} --ntasks=${ntasks} --time=${walltime} --qos=${qos}
+
+exit 0

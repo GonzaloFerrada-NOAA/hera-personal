@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Usage: chname <search> <replace> [files...]
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: chname <search> <replace> [files...]"
+  exit 1
+fi
+
+search=$1
+replace=$2
+shift 2
+
+# If no files were given, prompt to use all files in current directory
+if [[ $# -eq 0 ]]; then
+  read -p "No files specified. Rename all files in current directory? [y/N]: " confirm
+  confirm=${confirm,,}  # to lowercase
+  if [[ "$confirm" == "y" ]]; then
+    files=(*)  # all files in current dir
+  else
+    echo "Aborted."
+    exit 1
+  fi
+else
+  files=("$@")
+fi
+
+for f in "${files[@]}"; do
+  if [[ -e "$f" && "$f" == *"$search"* ]]; then
+    new="${f//$search/$replace}"
+    if [[ "$f" != "$new" ]]; then
+      echo "Renaming: $f → $new"
+      mv -- "$f" "$new"
+    fi
+  fi
+done

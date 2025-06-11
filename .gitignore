@@ -1,0 +1,18 @@
+# Ignore these directories:
+geoweaver/
+gw-workspace/
+h2/
+jdk/
+MATLAB/
+
+# Ignore .jar files and any logs
+*.jar
+*log*
+
+# Ignore all hidden files and folders...
+.*
+
+# ...except explicitly allowed ones
+!.bashrc
+!.cshrc
+!.gitignore

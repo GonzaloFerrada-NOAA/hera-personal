@@ -1,0 +1,5 @@
+#!/bin/bash
+
+module load nco
+ncpdq -O -4 -L 5 ${1} ${1}
+
